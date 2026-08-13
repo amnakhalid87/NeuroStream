@@ -4,6 +4,7 @@ scikit-learn
 joblib
 matplotlib
 seaborn
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
 sentence-transformers
 gradio
-black
