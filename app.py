@@ -3,6 +3,8 @@ import joblib
 import numpy as np
 import gradio as gr
 import spaces
+import uvicorn
+from fastapi import FastAPI, HTTPException, Query
 from huggingface_hub import hf_hub_download
 
 from src.load_data import load_data
@@ -18,17 +20,10 @@ HF_REPO = "amnaakhalid1/Netflix_data"
 
 @spaces.GPU
 def _zerogpu_warmup():
-    """
-    Required by Hugging Face ZeroGPU Spaces: at least one function must be
-    decorated with @spaces.GPU, or the Space refuses to start. Our pipeline
-    runs on CPU only, so this function does nothing real - it just satisfies
-    that startup requirement.
-    """
     return True
 
 
 def get_file(filename):
-    """HF dataset se file download karne ka simple function"""
     try:
         return hf_hub_download(repo_id=HF_REPO, filename=filename, repo_type="dataset")
     except Exception:
@@ -72,52 +67,51 @@ def setup():
 DF, TFIDF, TFIDF_MATRIX, TFIDF_SIM, SBERT_MODEL, SBERT_EMBEDDINGS, SBERT_SIM = setup()
 
 
-def tfidf_movie(title, n=5):
-    res = recommend_by_movie(title, DF, TFIDF_SIM, n=int(n))
-    return res if isinstance(res, str) else res.to_dict(orient="records")
+api = FastAPI(
+    title="Movie Recommendation API",
+    description="Content-based movie recommendations using TF-IDF and SBERT",
+    version="1.0.0",
+)
 
 
-def tfidf_query(query, n=5):
-    return recommend_by_query(query, DF, TFIDF, TFIDF_MATRIX, n=int(n)).to_dict(orient="records")
+@api.get("/")
+def health():
+    return {"status": "ok", "message": "Movie Recommendation API is running. See /docs for all endpoints."}
 
 
-def sbert_movie(title, n=5):
-    res = recommend_by_movie_sbert(title, DF, SBERT_SIM, n=int(n))
-    return res if isinstance(res, str) else res.to_dict(orient="records")
+@api.get("/recommend/tfidf/movie")
+def tfidf_movie(title: str = Query(...), n: int = Query(5, ge=1, le=20)):
+    result = recommend_by_movie(title, DF, TFIDF_SIM, n=n)
+    if isinstance(result, str):
+        raise HTTPException(status_code=404, detail=result)
+    return result.to_dict(orient="records")
 
 
-def sbert_query(query, n=5):
-    return recommend_by_query_sbert(query, SBERT_MODEL, DF, SBERT_EMBEDDINGS, n=int(n)).to_dict(orient="records")
+@api.get("/recommend/tfidf/query")
+def tfidf_query(q: str = Query(...), n: int = Query(5, ge=1, le=20)):
+    result = recommend_by_query(q, DF, TFIDF, TFIDF_MATRIX, n=n)
+    return result.to_dict(orient="records")
 
 
-with gr.Blocks(title="Movie Recommendation System") as demo:
-    gr.Markdown("# 🎬 Movie Recommendation System (TF-IDF + SBERT)")
+@api.get("/recommend/sbert/movie")
+def sbert_movie(title: str = Query(...), n: int = Query(5, ge=1, le=20)):
+    result = recommend_by_movie_sbert(title, DF, SBERT_SIM, n=n)
+    if isinstance(result, str):
+        raise HTTPException(status_code=404, detail=result)
+    return result.to_dict(orient="records")
 
-    with gr.Tab("TF-IDF - By Movie"):
-        t1_title = gr.Textbox(label="Movie title", placeholder="Inception")
-        t1_n = gr.Number(label="Number of recommendations", value=5)
-        t1_out = gr.JSON(label="Recommendations")
-        gr.Button("Recommend").click(tfidf_movie, inputs=[t1_title, t1_n], outputs=t1_out)
 
-    with gr.Tab("TF-IDF - By Query"):
-        t2_query = gr.Textbox(label="Describe what you want to watch", placeholder="e.g., space adventure")
-        t2_n = gr.Number(label="Number of recommendations", value=5)
-        t2_out = gr.JSON(label="Recommendations")
-        gr.Button("Recommend").click(tfidf_query, inputs=[t2_query, t2_n], outputs=t2_out)
+@api.get("/recommend/sbert/query")
+def sbert_query(q: str = Query(...), n: int = Query(5, ge=1, le=20)):
+    result = recommend_by_query_sbert(q, SBERT_MODEL, DF, SBERT_EMBEDDINGS, n=n)
+    return result.to_dict(orient="records")
 
-    with gr.Tab("SBERT - By Movie"):
-        s1_title = gr.Textbox(label="Movie title", placeholder="Inception")
-        s1_n = gr.Number(label="Number of recommendations", value=5)
-        s1_out = gr.JSON(label="Recommendations")
-        gr.Button("Recommend").click(sbert_movie, inputs=[s1_title, s1_n], outputs=s1_out)
 
-    with gr.Tab("SBERT - By Query (Semantic)"):
-        s2_query = gr.Textbox(
-            label="Describe what you want to watch", placeholder="e.g., action thriller with plot twists"
-        )
-        s2_n = gr.Number(label="Number of recommendations", value=5)
-        s2_out = gr.JSON(label="Recommendations")
-        gr.Button("Recommend").click(sbert_query, inputs=[s2_query, s2_n], outputs=s2_out)
+with gr.Blocks() as demo:
+    gr.Markdown("This Space serves a REST API. See `/docs` for endpoints.")
+
+app = gr.mount_gradio_app(api, demo, path="/ui")
+
 
 if __name__ == "__main__":
-    demo.launch()
+    uvicorn.run(app, host="0.0.0.0", port=7860)
