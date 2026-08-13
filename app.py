@@ -59,10 +59,11 @@ def setup():
     return df, tfidf, tfidf_matrix, tfidf_sim, sbert_model, sbert_embeddings, sbert_sim
 
 
+# Models load ho rahe hain
 DF, TFIDF, TFIDF_MATRIX, TFIDF_SIM, SBERT_MODEL, SBERT_EMBEDDINGS, SBERT_SIM = setup()
 
 
-# Recommender Helper Functions
+# Recommender Wrapper Functions
 def tfidf_movie(title, n=5):
     res = recommend_by_movie(title, DF, TFIDF_SIM, n=int(n))
     return res if isinstance(res, str) else res.to_dict(orient="records")
@@ -81,23 +82,35 @@ def sbert_query(query, n=5):
     return recommend_by_query_sbert(query, SBERT_MODEL, DF, SBERT_EMBEDDINGS, n=int(n)).to_dict(orient="records")
 
 
-# Gradio Clean Layout
+# Gradio Interface (Explicit layout taake bug na aaye)
 with gr.Blocks(title="Movie Recommendation System") as demo:
     gr.Markdown("# 🎬 Movie Recommendation System (TF-IDF + SBERT)")
 
-    tabs = [
-        ("TF-IDF - By Movie", tfidf_movie, "Movie title", "Inception"),
-        ("TF-IDF - By Query", tfidf_query, "Describe what you want to watch", None),
-        ("SBERT - By Movie", sbert_movie, "Movie title", "Inception"),
-        ("SBERT - By Query (Semantic)", sbert_query, "Describe what you want to watch", None),
-    ]
+    with gr.Tab("TF-IDF - By Movie"):
+        t1_title = gr.Textbox(label="Movie title", placeholder="Inception")
+        t1_n = gr.Number(label="Number of recommendations", value=5)
+        t1_out = gr.JSON(label="Recommendations")
+        gr.Button("Recommend").click(tfidf_movie, inputs=[t1_title, t1_n], outputs=t1_out)
 
-    for label, func, input_label, placeholder in tabs:
-        with gr.Tab(label):
-            txt = gr.Textbox(label=input_label, placeholder=placeholder)
-            num = gr.Number(label="Number of recommendations", value=5)
-            out = gr.JSON(label="Recommendations")
-            gr.Button("Recommend").click(func, inputs=[txt, num], outputs=out)
+    with gr.Tab("TF-IDF - By Query"):
+        t2_query = gr.Textbox(label="Describe what you want to watch", placeholder="e.g., space adventure")
+        t2_n = gr.Number(label="Number of recommendations", value=5)
+        t2_out = gr.JSON(label="Recommendations")
+        gr.Button("Recommend").click(tfidf_query, inputs=[t2_query, t2_n], outputs=t2_out)
+
+    with gr.Tab("SBERT - By Movie"):
+        s1_title = gr.Textbox(label="Movie title", placeholder="Inception")
+        s1_n = gr.Number(label="Number of recommendations", value=5)
+        s1_out = gr.JSON(label="Recommendations")
+        gr.Button("Recommend").click(sbert_movie, inputs=[s1_title, s1_n], outputs=s1_out)
+
+    with gr.Tab("SBERT - By Query (Semantic)"):
+        s2_query = gr.Textbox(
+            label="Describe what you want to watch", placeholder="e.g., action thriller with plot twists"
+        )
+        s2_n = gr.Number(label="Number of recommendations", value=5)
+        s2_out = gr.JSON(label="Recommendations")
+        gr.Button("Recommend").click(sbert_query, inputs=[s2_query, s2_n], outputs=s2_out)
 
 if __name__ == "__main__":
     demo.launch()
