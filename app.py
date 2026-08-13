@@ -22,9 +22,9 @@ HF_REPO = "amnaakhalid1/Netflix_data"
 def _zerogpu_warmup():
     """
     Required by Hugging Face ZeroGPU Spaces: at least one function must be
-    decorated with @spaces.GPU, or the Space refuses to start. Our pipeline
-    runs on CPU only, so this function does nothing real - it just satisfies
-    that startup requirement.
+    decorated with @spaces.GPU and actually invoked, or the Space refuses
+    to start. Called first, before any model/tensor is created, to avoid
+    conflicts with ZeroGPU's internal torch patching.
     """
     return True
 
@@ -71,8 +71,8 @@ def setup():
     return df, tfidf, tfidf_matrix, tfidf_sim, sbert_model, sbert_embeddings, sbert_sim
 
 
+_zerogpu_warmup()  # call first, before any torch/model state exists, to avoid tensor conflicts
 DF, TFIDF, TFIDF_MATRIX, TFIDF_SIM, SBERT_MODEL, SBERT_EMBEDDINGS, SBERT_SIM = setup()
-_zerogpu_warmup()  # actually invoke it so ZeroGPU's startup check detects it
 
 
 # ---- FastAPI app: ye asli, clean API hai ----
@@ -116,6 +116,7 @@ def sbert_query(q: str = Query(...), n: int = Query(5, ge=1, le=20)):
     return result.to_dict(orient="records")
 
 
+# ---- Tiny hidden Gradio placeholder (Space SDK ke liye zaroori, kabhi nahi dikhegi) ----
 with gr.Blocks() as demo:
     gr.Markdown("This Space serves a REST API. See `/docs` for endpoints.")
 
