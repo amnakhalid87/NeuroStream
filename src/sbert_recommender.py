@@ -5,7 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 def recommend_by_movie_sbert(title: str, df: pd.DataFrame, sbert_sim: np.ndarray, n: int = 5):
     if title not in df["title"].values:
-        return f"'{title}' dataset mein nahi mili."
+        return f"'{title}' not found"
 
     idx = df[df["title"] == title].index[0]
     sim_scores = list(enumerate(sbert_sim[idx]))
