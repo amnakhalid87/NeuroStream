@@ -8,3 +8,4 @@ seaborn
 torch
 sentence-transformers
 gradio
+huggingface_hub<0.26
