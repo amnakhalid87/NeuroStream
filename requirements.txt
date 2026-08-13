@@ -4,6 +4,7 @@ scikit-learn
 joblib
 matplotlib
 seaborn
+flake8
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
 sentence-transformers
