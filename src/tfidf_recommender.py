@@ -3,7 +3,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 def recommend_by_movie(title: str, df: pd.DataFrame, sim_matrix, n: int = 5):
-
     if title not in df["title"].values:
         return f"'{title}' dataset mein nahi mili."
 
@@ -21,7 +20,6 @@ def recommend_by_movie(title: str, df: pd.DataFrame, sim_matrix, n: int = 5):
 
 
 def recommend_by_query(query_text: str, df: pd.DataFrame, tfidf, tfidf_matrix, n: int = 5):
-
     query_vector = tfidf.transform([query_text.lower()])
     sim_scores = cosine_similarity(query_vector, tfidf_matrix)[0]
 

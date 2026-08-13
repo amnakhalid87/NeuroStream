@@ -4,7 +4,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 def recommend_by_movie_sbert(title: str, df: pd.DataFrame, sbert_sim: np.ndarray, n: int = 5):
-
     if title not in df["title"].values:
         return f"'{title}' dataset mein nahi mili."
 
@@ -22,7 +21,6 @@ def recommend_by_movie_sbert(title: str, df: pd.DataFrame, sbert_sim: np.ndarray
 
 
 def recommend_by_query_sbert(query_text: str, model, df: pd.DataFrame, sbert_embeddings: np.ndarray, n: int = 5):
-
     query_vector = model.encode([query_text], convert_to_numpy=True).astype(np.float32)
     sim_scores = cosine_similarity(query_vector, sbert_embeddings)[0]
 
