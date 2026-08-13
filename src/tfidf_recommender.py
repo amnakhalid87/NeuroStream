@@ -4,7 +4,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 def recommend_by_movie(title: str, df: pd.DataFrame, sim_matrix, n: int = 5):
     if title not in df["title"].values:
-        return f"'{title}' dataset mein nahi mili."
+        return f"'{title}' not found"
 
     idx = df[df["title"] == title].index[0]
     sim_scores = list(enumerate(sim_matrix[idx]))
