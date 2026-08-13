@@ -20,10 +20,17 @@ HF_REPO = "amnaakhalid1/Netflix_data"
 
 @spaces.GPU
 def _zerogpu_warmup():
+    """
+    Required by Hugging Face ZeroGPU Spaces: at least one function must be
+    decorated with @spaces.GPU, or the Space refuses to start. Our pipeline
+    runs on CPU only, so this function does nothing real - it just satisfies
+    that startup requirement.
+    """
     return True
 
 
 def get_file(filename):
+    """HF dataset se file download karne ka simple function"""
     try:
         return hf_hub_download(repo_id=HF_REPO, filename=filename, repo_type="dataset")
     except Exception:
@@ -65,8 +72,10 @@ def setup():
 
 
 DF, TFIDF, TFIDF_MATRIX, TFIDF_SIM, SBERT_MODEL, SBERT_EMBEDDINGS, SBERT_SIM = setup()
+_zerogpu_warmup()  # actually invoke it so ZeroGPU's startup check detects it
 
 
+# ---- FastAPI app: ye asli, clean API hai ----
 api = FastAPI(
     title="Movie Recommendation API",
     description="Content-based movie recommendations using TF-IDF and SBERT",
